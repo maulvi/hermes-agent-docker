@@ -45,7 +45,7 @@ RUN useradd -m -s /bin/bash hermes \
 # 6. Setup directories
 RUN mkdir -p /opt/data /opt/hermes /opt/data/skills /opt/data/plugins \
     /opt/data/memories /opt/data/sessions /opt/data/cron \
-    /opt/data/platforms/whatsapp/session \
+
     && chown -R hermes:hermes /opt/data /opt/hermes
 
 USER hermes
@@ -78,7 +78,7 @@ RUN mkdir -p ~/bin \
     && echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 
 # 10. Expose ports
-EXPOSE 3000 5001
+EXPOSE 5002
 
 # 11. Default entrypoint
 CMD ["bash"]

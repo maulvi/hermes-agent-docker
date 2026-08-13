@@ -17,14 +17,11 @@ cp .env.example .env
 
 ### 3. Run
 ```bash
-# Option A: Bridge network (default, lebih aman)
-docker-compose up -d
-
-# Option B: Host network (recommended — WebSocket & Tailscale langsung jalan)
+# Host network (recommended — container pakai jaringan host langsung)
 docker-compose -f docker-compose.host.yml up -d
 ```
 
-> **Note:** Dengan `network_mode: host`, container langsung pakai jaringan host. Port custom (`3001`, `5002`) di-set lewat `.env`.
+> **Note:** Dengan `network_mode: host`, container langsung pakai jaringan host. Port custom (`5002`) di-set lewat `.env`.
 
 ## 📦 Tools Pre-installed
 
@@ -34,8 +31,7 @@ docker-compose -f docker-compose.host.yml up -d
 | git | Version control |
 | openssh-client | SSH ke server lain |
 | python3 + pip | Scripting & automation |
-| nodejs LTS | WhatsApp bridge (Baileys) |
-| tailscale | VPN/mesh networking |
+| nodejs LTS | Runtime for various tools |
 | sudo | Elevated permissions |
 | bash, coreutils | Shell utilities |
 | sqlite3 | Database untuk sessions & kanban |
@@ -44,11 +40,6 @@ docker-compose -f docker-compose.host.yml up -d
 | duckduckgo-search | Web search |
 
 ## 🔧 Fitur
-
-### WhatsApp Bridge
-- Support Baileys (unofficial WhatsApp Web)
-- Auto-reconnect & session management
-- Allowlist mode (hybrid: semua bisa chat, admin command terbatas)
 
 ### Browser Tools
 - Playwright + Chromium headless
@@ -126,17 +117,13 @@ services:
 # API Keys
 OPENROUTER_API_KEY=your_key_here
 
-# WhatsApp
-WHATSAPP_ENABLED=true
-WHATSAPP_ALLOWED_USERS=*
-
 # Discord
 DISCORD_ENABLED=true
 DISCORD_BOT_TOKEN=your_token
 DISCORD_ALLOWED_USERS=your_user_id
 
-# Tailscale (optional)
-TAILSCALE_AUTH_KEY=tskey-auth-your_key_here
+# Custom Ports
+HERMES_DASHBOARD_PORT=5002
 ```
 
 ## 📁 Volume Mounts
@@ -160,7 +147,7 @@ Image otomatis ter-build dan ter-push ke Docker Hub setiap push ke `main`.
 ## 📝 Dockerfile Layers
 
 1. **Base** — Debian bookworm-slim
-2. **System tools** — curl, wget, jq, git, openssh, python3, nodejs, tailscale
+2. **System tools** — curl, wget, jq, git, openssh, python3, nodejs LTS
 3. **Dev libs** — build-essential, libffi, libssl
 4. **Playwright** — chromium + dependencies
 5. **SQLite3** — database
@@ -171,8 +158,6 @@ Image otomatis ter-build dan ter-push ke Docker Hub setiap push ke `main`.
 
 | Issue | Workaround |
 |-------|------------|
-| WebSocket di bridge network | Pakai `network_mode: host` |
-| Tailscale socket path beda | Set socket path manual |
 | No GPU access | Pakai cloud model (OpenRouter) |
 | File system isolated | Pakai volumes untuk persisten |
 
