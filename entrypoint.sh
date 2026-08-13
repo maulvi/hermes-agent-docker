@@ -3,40 +3,75 @@
 set -Eeuo pipefail
 
 SSH_PORT="${SSH_PORT:-2222}"
+HERMES_HOME="/home/hermes"
+SSH_DIR="${HERMES_HOME}/.ssh"
+AUTHORIZED_KEYS="${SSH_DIR}/authorized_keys"
 
-mkdir -p "$HOME/.ssh"
-chmod 700 "$HOME/.ssh"
+# Pastikan direktori user dan SSH benar
+install -d \
+    -o hermes \
+    -g hermes \
+    -m 0755 \
+    "$HERMES_HOME"
 
-# Public key dari environment
+install -d \
+    -o hermes \
+    -g hermes \
+    -m 0700 \
+    "$SSH_DIR"
+
+# Public key dari environment variable
 if [ -n "${SSH_PUBLIC_KEY:-}" ]; then
-    printf '%s\n' "$SSH_PUBLIC_KEY" > "$HOME/.ssh/authorized_keys"
+    printf '%s\n' "$SSH_PUBLIC_KEY" > "$AUTHORIZED_KEYS"
 fi
 
-# Public key dari mounted file
+# Mounted key menjadi sumber utama jika tersedia
 if [ -f /opt/data/ssh/authorized_keys ]; then
-    cp /opt/data/ssh/authorized_keys "$HOME/.ssh/authorized_keys"
+    install \
+        -o hermes \
+        -g hermes \
+        -m 0600 \
+        /opt/data/ssh/authorized_keys \
+        "$AUTHORIZED_KEYS"
 fi
 
-if [ ! -s "$HOME/.ssh/authorized_keys" ]; then
-    echo "ERROR: authorized_keys tidak ditemukan atau kosong" >&2
+if [ ! -s "$AUTHORIZED_KEYS" ]; then
+    echo "ERROR: $AUTHORIZED_KEYS tidak ada atau kosong" >&2
     exit 1
 fi
 
-chmod 600 "$HOME/.ssh/authorized_keys"
-chown "$(id -u):$(id -g)" "$HOME/.ssh/authorized_keys"
+chown hermes:hermes "$SSH_DIR" "$AUTHORIZED_KEYS"
+chmod 0700 "$SSH_DIR"
+chmod 0600 "$AUTHORIZED_KEYS"
 
-if ! tmux has-session -t hermes 2>/dev/null; then
-    tmux new-session -d -s hermes -c /opt/data
+# Buat tmux sebagai user hermes
+if ! sudo -u hermes -H tmux has-session -t hermes 2>/dev/null; then
+    sudo -u hermes -H tmux new-session \
+        -d \
+        -s hermes \
+        -c /opt/data
 fi
 
-hermes gateway run &
+# Jalankan Hermes sebagai user hermes
+sudo -u hermes -H bash -lc \
+    'exec hermes gateway run' &
+
 GATEWAY_PID=$!
 
-sudo /usr/sbin/sshd -t -o "Port=$SSH_PORT"
+# Validasi konfigurasi SSH
+/usr/sbin/sshd -t -o "Port=${SSH_PORT}"
 
-trap 'kill "$GATEWAY_PID" 2>/dev/null || true' EXIT SIGTERM SIGINT
+cleanup() {
+    kill "$GATEWAY_PID" 2>/dev/null || true
+    wait "$GATEWAY_PID" 2>/dev/null || true
+}
 
-exec sudo /usr/sbin/sshd \
+trap cleanup SIGTERM SIGINT EXIT
+
+echo "Starting SSH server on port ${SSH_PORT}..."
+echo "Authorized keys: ${AUTHORIZED_KEYS}"
+
+exec /usr/sbin/sshd \
     -D \
     -e \
-    -o "Port=$SSH_PORT"
+    -o "Port=${SSH_PORT}"
