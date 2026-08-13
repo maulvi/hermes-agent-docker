@@ -1,0 +1,18 @@
+services:
+  hermes:
+    image: vltruist/hermes-agent:latest
+    container_name: hermes
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    network_mode: host
+    volumes:
+      - hermes-data:/opt/data
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Jakarta
+      - LANG=en_US.UTF-8
+
+volumes:
+  hermes-data:
