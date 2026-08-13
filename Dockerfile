@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 FROM debian:bookworm-slim
-
+ARG NODE_VERSION=24
+FROM node:${NODE_VERSION}-alpine
 LABEL maintainer="hermes-agent"
 LABEL description="Hermes Agent - Ready to use Docker image with official installer"
 
