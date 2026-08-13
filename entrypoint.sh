@@ -11,8 +11,11 @@ if [ -f /opt/data/ssh/authorized_keys ]; then
     chmod 600 ~/.ssh/authorized_keys
 fi
 
-# Start tmux session in background (auto-start)
+# Start tmux session in background
 tmux new-session -d -s hermes
 
-# Start SSH daemon
+# Start Hermes gateway in background
+hermes gateway start --background 2>&1 || echo "Gateway start failed, check config"
+
+# Start SSH daemon (keeps container running)
 exec sudo /usr/sbin/sshd -D
