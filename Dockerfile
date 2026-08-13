@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:bookworm-slim
+FROM debian:trixe-slim
 LABEL maintainer="hermes-agent"
 LABEL description="Hermes Agent - Ready to use Docker image with official installer"
 
