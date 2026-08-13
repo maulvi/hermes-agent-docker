@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM debian:bookworm-slim
 
 LABEL maintainer="hermes-agent"
@@ -10,16 +12,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-# 1. Install ONLY what installer doesn't handle
-# - openssh-server: SSH access
-# - tmux: persistent sessions
-# - sudo: elevated permissions
-# - xz-utils: installer needs this to extract Node.js .tar.xz
-# - sqlite3: database
-# - git, curl, ca-certificates: installer dependencies
+# ============================================================
+# LAYER 1: System deps (rarely changes, heavily cached)
+# ============================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
+    wget \
     ca-certificates \
     gnupg \
     sudo \
@@ -29,33 +28,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install Hermes Agent (official installer - handles Python, Node.js, ripgrep, ffmpeg)
-RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive --skip-setup
+# ============================================================
+# LAYER 2: Hermes installer (only rebuilds when hermes updates)
+# Uses cache mounts for npm/pip to speed up subsequent builds
+# ============================================================
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/tmp/hermes-download \
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive --skip-setup
 
-# 3. Setup User & Passwordless Sudo
+# ============================================================
+# LAYER 3: User + SSH + tmux (rarely changes, cached)
+# ============================================================
 RUN useradd -m -s /bin/bash hermes \
     && echo 'hermes ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/hermes \
     && chmod 0440 /etc/sudoers.d/hermes \
     && chown -R hermes:hermes /opt/hermes /opt/data /root/.hermes 2>/dev/null || true
 
-# 4. Setup SSH
 RUN mkdir -p /run/sshd \
     && ssh-keygen -A \
     && sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config \
     && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
 
-# 5. Switch to hermes user
 USER hermes
 WORKDIR /opt/data
 
-# 6. Tmux config
 RUN echo 'set -g default-terminal "screen-256color"' > ~/.tmux.conf \
     && echo 'set -g history-limit 10000' >> ~/.tmux.conf \
     && echo 'set -g mouse on' >> ~/.tmux.conf \
     && mkdir -p ~/.ssh && chmod 700 ~/.ssh
 
-# 7. Entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN sudo chmod +x /entrypoint.sh
 
