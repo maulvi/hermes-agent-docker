@@ -15,7 +15,7 @@ fi
 tmux new-session -d -s hermes
 
 # Start Hermes gateway in background
-hermes gateway start --background 2>&1 || echo "Gateway start failed, check config"
+hermes gateway start 2>&1 || echo "Gateway start failed, check config"
 
 # Start SSH daemon (keeps container running)
 exec sudo /usr/sbin/sshd -D
