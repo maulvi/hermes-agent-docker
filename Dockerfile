@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM debian:bookworm-slim
-ARG NODE_VERSION=24
+FROM node:bookworm-slim
 LABEL maintainer="hermes-agent"
 LABEL description="Hermes Agent - Ready to use Docker image with official installer"
 
@@ -25,6 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xz-utils \
     openssh-server \
     tmux \
+    ripgrep \
+    ffmpeg \
     sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
