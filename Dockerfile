@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # 1. Install system utilities & dev libs
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    coreutils bash sed grep awk findutils \
+    coreutils bash sed grep mawk findutils \
     curl wget jq netcat-openbsd socat \
     openssh-client \
     python3 python3-pip python3-venv \
