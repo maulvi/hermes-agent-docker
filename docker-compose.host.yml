@@ -16,6 +16,7 @@ services:
       - LANG=en_US.UTF-8
       - HERMES_DASHBOARD_PORT=${HERMES_DASHBOARD_PORT:-5002}
       - SSH_PUBLIC_KEY=${SSH_PUBLIC_KEY:-}
+      - SSH_PORT=${SSH_PORT:-2222}
 
 volumes:
   hermes-data:
