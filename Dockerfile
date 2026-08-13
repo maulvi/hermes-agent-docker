@@ -46,7 +46,7 @@ RUN useradd -m -s /bin/bash hermes \
 RUN mkdir -p /opt/data /opt/hermes /opt/data/skills /opt/data/plugins \
     /opt/data/memories /opt/data/sessions /opt/data/cron \
     /opt/data/platforms/whatsapp/session \
-    && chown -R hermes:hermes /opt/data /opt/hermes /opt/tailscale
+    && chown -R hermes:hermes /opt/data /opt/hermes
 
 USER hermes
 WORKDIR /opt/data
