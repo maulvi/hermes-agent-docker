@@ -15,7 +15,7 @@ fi
 tmux new-session -d -s hermes
 
 # Start Hermes gateway in background
-hermes gateway install
+hermes gateway start
 
 # Start SSH daemon (keeps container running)
 exec sudo /usr/sbin/sshd -D
