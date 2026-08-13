@@ -36,13 +36,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
 # 3. Setup Locale & TimeZone
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-# 4. Install Tailscale (static binary)
-RUN mkdir -p /opt/tailscale \
-    && curl -fsSL -o /tmp/ts.tgz "https://pkgs.tailscale.com/stable/tailscale_1.102.2_amd64.tgz" \
-    && tar xzf /tmp/ts.tgz -C /tmp \
-    && cp /tmp/tailscale_1.102.2_amd64/tailscale /opt/tailscale/ \
-    && cp /tmp/tailscale_1.102.2_amd64/tailscaled /opt/tailscale/ \
-    && rm -rf /tmp/ts.tgz /tmp/tailscale_1.102.2_amd64
 
 # 5. Setup User & Passwordless Sudo
 RUN useradd -m -s /bin/bash hermes \

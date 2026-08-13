@@ -20,9 +20,11 @@ cp .env.example .env
 # Option A: Bridge network (default, lebih aman)
 docker-compose up -d
 
-# Option B: Host network (WebSocket & Tailscale langsung jalan)
+# Option B: Host network (recommended — WebSocket & Tailscale langsung jalan)
 docker-compose -f docker-compose.host.yml up -d
 ```
+
+> **Note:** Dengan `network_mode: host`, container langsung pakai jaringan host. Port custom (`3001`, `5002`) di-set lewat `.env`.
 
 ## 📦 Tools Pre-installed
 

@@ -13,6 +13,8 @@ services:
     environment:
       - TZ=Asia/Jakarta
       - LANG=en_US.UTF-8
+      - WHATSAPP_BRIDGE_PORT=${WHATSAPP_BRIDGE_PORT:-3001}
+      - HERMES_DASHBOARD_PORT=${HERMES_DASHBOARD_PORT:-5002}
 
 volumes:
   hermes-data:
