@@ -1,6 +1,6 @@
 # 🤖 Hermes Agent — Docker Ready
 
-AI agent yang bisa ngobrol, kerjain tugas, dan akses sistem langsung. Support WhatsApp, Discord, Telegram, dan banyak lagi.
+Docker image untuk [Hermes Agent](https://github.com/NousResearch/hermes-agent) dengan official installer, SSH server, dan tmux built-in.
 
 ## 🚀 Quick Start
 
@@ -9,54 +9,102 @@ AI agent yang bisa ngobrol, kerjain tugas, dan akses sistem langsung. Support Wh
 docker pull vltruist/hermes-agent:latest
 ```
 
-### 2. Setup Environment
+### 2. Setup SSH Public Key
+```bash
+mkdir -p ssh
+cp ~/.ssh/id_ed25519.pub ssh/authorized_keys
+```
+
+### 3. Setup Environment
 ```bash
 cp .env.example .env
 # Edit .env dengan API keys kamu
 ```
 
-### 3. Run
+### 4. Run
 ```bash
-# Host network (recommended — container pakai jaringan host langsung)
 docker-compose -f docker-compose.host.yml up -d
 ```
 
-> **Note:** Dengan `network_mode: host`, container langsung pakai jaringan host. Port custom (`5002`) di-set lewat `.env`.
+### 5. Connect
+```bash
+ssh hermes@<IP_HOST>
+tmux attach -t hermes
+```
 
-## 📦 Tools Pre-installed
+## 📦 Apa yang ada di image ini?
 
-| Tool | Fungsi |
-|------|--------|
-| curl, wget, jq | HTTP requests & JSON parsing |
+### Layer 1: System Dependencies (pre-installed)
+| Package | Fungsi |
+|---------|--------|
 | git | Version control |
-| openssh-client | SSH ke server lain |
-| python3 + pip | Scripting & automation |
-| nodejs LTS | Runtime for various tools |
+| curl, wget | HTTP client |
 | sudo | Elevated permissions |
-| bash, coreutils | Shell utilities |
-| sqlite3 | Database untuk sessions & kanban |
-| playwright + chromium | Web browsing & automation |
-| gh (GitHub CLI) | GitHub operations |
-| duckduckgo-search | Web search |
+| xz-utils | Extract .tar.xz (untuk installer) |
+| openssh-server | SSH access ke container |
+| tmux | Persistent terminal sessions |
+| sqlite3 | Database |
 
-## 🔧 Fitur
+### Layer 2: Hermes Agent (via official installer)
+Installer otomatis install:
+- **Python 3** + virtual environment
+- **Node.js 22 LTS**
+- **ripgrep** (fast search)
+- **ffmpeg** (media processing)
+- **Playwright + Chromium** (browser tools)
+- **Hermes Agent** + semua dependencies
 
-### Browser Tools
-- Playwright + Chromium headless
-- Bisa buka website, screenshot, fill form
-- Support vision analysis
+### Layer 3: SSH + tmux + Entrypoint
+- SSH server (public key only, password disabled)
+- tmux config (256 color, mouse support, 10k history)
+- Entrypoint: SSH + tmux + Hermes gateway auto-start
 
-### Database
-- SQLite3 untuk sessions, kanban, memory
-- Persisten via volume mount
+## 🔐 SSH Access
 
-### GitHub Integration
-- GitHub CLI (gh) untuk manage repo
-- CI/CD integration
+Container punya SSH server built-in. Login pakai **public key only** (password disabled).
+
+### Setup:
+
+**Option 1: Via file (recommended)**
+```bash
+# Di host, buat folder ssh
+mkdir -p ssh
+cp ~/.ssh/id_ed25519.pub ssh/authorized_keys
+```
+
+**Option 2: Via environment variable**
+```bash
+# Di .env
+SSH_PUBLIC_KEY=ssh-ed25519 AAAA... your@email.com
+```
+
+### Connect:
+```bash
+ssh hermes@<IP_HOST>
+```
+
+### Tmux (persistent sessions):
+```bash
+# tmux auto-start saat container boot
+# Kalau disconnect, reconnect:
+ssh hermes@<IP_HOST>
+tmux attach -t hermes
+```
+
+| Shortcut | Fungsi |
+|----------|--------|
+| `Ctrl+B, D` | Detach (session tetap jalan) |
+| `tmux ls` | Lihat semua session |
+| `tmux attach -t nama` | Reconnect |
+| `tmux kill-session -t nama` | Hapus session |
 
 ## ⚙️ Configuration
 
-### Model Provider (OpenRouter)
+Hermes baca config dari `/opt/data/`:
+- `config.yaml` — model, provider, toolsets
+- `.env` — API keys, secrets
+
+### Model Provider
 ```yaml
 # config.yaml
 model:
@@ -73,129 +121,75 @@ providers:
     base_url: http://100.100.12.34:20128/v1
 ```
 
-### Fallback Model
+### Fallback
 ```yaml
 fallback_providers:
   provider: openrouter
   model: qwen/qwen3.7-flash
 ```
 
-## 🌐 Network Modes
+## 🌐 Network
 
-### Bridge Network (Default)
-```yaml
-# docker-compose.yml
-services:
-  hermes:
-    ports:
-      - "3000:3000"   # WhatsApp bridge
-      - "5001:5001"   # Dashboard
-```
-- ✅ Lebih aman (isolated)
-- ❌ WebSocket bisa diblokir
-- ❌ Tailscale perlu setup manual
+Image ini pakai `network_mode: host` — container langsung pakai jaringan host.
 
-### Host Network (Recommended untuk production)
-```yaml
-# docker-compose.host.yml
-services:
-  hermes:
-    network_mode: host
-```
 - ✅ WebSocket langsung jalan
-- ✅ Tailscale langsung akses
+- ✅ Tailscale langsung akses (tanpa install di container)
 - ✅ Port langsung exposed
-- ⚠️ Kurang aman (container bisa akses semua port host)
-
-## 🔐 Environment Variables
-
-```bash
-# API Keys
-OPENROUTER_API_KEY=your_key_here
-
-# Discord
-DISCORD_ENABLED=true
-DISCORD_BOT_TOKEN=your_token
-DISCORD_ALLOWED_USERS=your_user_id
-
-# Custom Ports
-HERMES_DASHBOARD_PORT=5002
-```
+- ⚠️ Security diatur lewat firewall host (UFW)
 
 ## 📁 Volume Mounts
 
 | Path | Fungsi |
 |------|--------|
 | `/opt/data` | Data persisten (config, memory, sessions) |
-| `/opt/data/config.yaml` | Konfigurasi utama |
-| `/opt/data/.env` | API keys & secrets |
-| `/opt/data/skills/` | Custom skills |
-| `/opt/data/plugins/` | Custom plugins |
 
-## 🐳 GitHub Actions
+Mount `/opt/data` dari host untuk persistensi data antar restart.
 
-Image otomatis ter-build dan ter-push ke Docker Hub setiap push ke `main`.
+## 🐳 Docker Compose
 
-### Setup GitHub Secrets:
-1. `DOCKER_USERNAME` — username Docker Hub (vltruist)
-2. `DOCKER_PASSWORD` — password/access token Docker Hub
-
-
-## 🔐 SSH Access (Public Key)
-
-Container punya SSH server built-in. Login pakai public key (lebih aman).
-
-### Setup:
-
-**Option 1: Via environment variable**
-```bash
-# Di .env
-SSH_PUBLIC_KEY=ssh-ed25519 AAAA... your@email.com
+```yaml
+services:
+  hermes:
+    image: vltruist/hermes-agent:latest
+    container_name: hermes
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - hermes-data:/opt/data
+      - ./ssh:/opt/data/ssh:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Jakarta
+      - HERMES_DASHBOARD_PORT=5002
 ```
 
-**Option 2: Via file (recommended)**
+## 🔧 Build
+
+Image di-build otomatis via GitHub Actions setiap push ke `main`.
+
+### Build locally:
 ```bash
-# Buat folder ssh di host
-mkdir -p ssh
-cp ~/.ssh/id_ed25519.pub ssh/authorized_keys
+docker build -t hermes-agent .
 ```
 
-### Connect:
-```bash
-# Dari mana saja
-ssh hermes@<IP_HOST>
+### Build time:
+- **First build:** ~13 menit (download semua dependencies)
+- **Cached build:** ~5 menit (pakai BuildKit cache)
 
-# Di dalam container, pakai tmux untuk session persisten
-tmux new -s hermes
-
-# Kalau disconnect, reconnect:
-ssh hermes@<IP_HOST>
-tmux attach -t hermes
-```
-
-### Tmux shortcuts:
-| Shortcut | Fungsi |
-|----------|--------|
-| `Ctrl+B, D` | Detach dari session (session tetap jalan) |
-| `tmux ls` | Lihat semua session |
-| `tmux attach -t nama` | Reconnect ke session |
-| `tmux kill-session -t nama` | Hapus session |
-## 📝 Dockerfile Layers
-
-1. **Base** — Debian bookworm-slim
-2. **System tools** — curl, wget, jq, git, openssh, python3, nodejs LTS
-3. **Dev libs** — build-essential, libffi, libssl
-4. **Playwright** — chromium + dependencies
-5. **SQLite3** — database
-6. **GitHub CLI** — gh command
-7. **Hermes Agent** — pip install
+### GitHub Secrets:
+| Secret | Fungsi |
+|--------|--------|
+| `DOCKER_USERNAME` | Username Docker Hub |
+| `DOCKER_PASSWORD` | Password/access token Docker Hub |
 
 ## ⚠️ Known Limitations
 
 | Issue | Workaround |
 |-------|------------|
 | No GPU access | Pakai cloud model (OpenRouter) |
-| File system isolated | Pakai volumes untuk persisten |
+| No WhatsApp bridge | Install manual di dalam container |
+| Security via host firewall | Atur UFW di bare metal |
 
 ## 📄 License
 
