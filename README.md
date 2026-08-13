@@ -50,10 +50,6 @@ docker-compose -f docker-compose.host.yml up -d
 - SQLite3 untuk sessions, kanban, memory
 - Persisten via volume mount
 
-### VPN/Mesh
-- Tailscale untuk koneksi ke server lain
-- Bisa akses private network
-
 ### GitHub Integration
 - GitHub CLI (gh) untuk manage repo
 - CI/CD integration
