@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Install Hermes Agent (official installer - runs as root)
-RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive --skip-setup
 
 # 3. Setup User & Passwordless Sudo
 RUN useradd -m -s /bin/bash hermes \
