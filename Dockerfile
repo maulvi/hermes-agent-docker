@@ -10,26 +10,33 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-# 1. Install minimal system dependencies
+# 1. Install ONLY what installer doesn't handle
+# - openssh-server: SSH access
+# - tmux: persistent sessions
+# - sudo: elevated permissions
+# - xz-utils: installer needs this to extract Node.js .tar.xz
+# - sqlite3: database
+# - git, curl, ca-certificates: installer dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
     curl \
     ca-certificates \
     gnupg \
     sudo \
-    git \
+    xz-utils \
     openssh-server \
     tmux \
     sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install Hermes Agent (official installer - runs as root)
+# 2. Install Hermes Agent (official installer - handles Python, Node.js, ripgrep, ffmpeg)
 RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive --skip-setup
 
 # 3. Setup User & Passwordless Sudo
 RUN useradd -m -s /bin/bash hermes \
     && echo 'hermes ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/hermes \
     && chmod 0440 /etc/sudoers.d/hermes \
-    && chown -R hermes:hermes /opt/hermes /opt/data
+    && chown -R hermes:hermes /opt/hermes /opt/data /root/.hermes 2>/dev/null || true
 
 # 4. Setup SSH
 RUN mkdir -p /run/sshd \
