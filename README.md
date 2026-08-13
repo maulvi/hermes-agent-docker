@@ -83,6 +83,8 @@ SSH_PUBLIC_KEY=ssh-ed25519 AAAA... your@email.com
 ssh hermes@<IP_HOST>
 ```
 
+> **Username:** `hermes` | **Port:** `22` | **Auth:** Public key only (password disabled)
+
 ### Tmux (persistent sessions):
 ```bash
 # tmux auto-start saat container boot
