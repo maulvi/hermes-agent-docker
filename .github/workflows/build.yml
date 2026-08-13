@@ -10,6 +10,7 @@ on:
 env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   IMAGE_NAME: hermes-agent
+  NODE_VERSION: "24"
 
 jobs:
   build:
