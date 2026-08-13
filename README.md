@@ -140,6 +140,46 @@ Image otomatis ter-build dan ter-push ke Docker Hub setiap push ke `main`.
 1. `DOCKER_USERNAME` — username Docker Hub (vltruist)
 2. `DOCKER_PASSWORD` — password/access token Docker Hub
 
+
+## 🔐 SSH Access (Public Key)
+
+Container punya SSH server built-in. Login pakai public key (lebih aman).
+
+### Setup:
+
+**Option 1: Via environment variable**
+```bash
+# Di .env
+SSH_PUBLIC_KEY=ssh-ed25519 AAAA... your@email.com
+```
+
+**Option 2: Via file (recommended)**
+```bash
+# Buat folder ssh di host
+mkdir -p ssh
+cp ~/.ssh/id_ed25519.pub ssh/authorized_keys
+```
+
+### Connect:
+```bash
+# Dari mana saja
+ssh hermes@<IP_HOST>
+
+# Di dalam container, pakai tmux untuk session persisten
+tmux new -s hermes
+
+# Kalau disconnect, reconnect:
+ssh hermes@<IP_HOST>
+tmux attach -t hermes
+```
+
+### Tmux shortcuts:
+| Shortcut | Fungsi |
+|----------|--------|
+| `Ctrl+B, D` | Detach dari session (session tetap jalan) |
+| `tmux ls` | Lihat semua session |
+| `tmux attach -t nama` | Reconnect ke session |
+| `tmux kill-session -t nama` | Hapus session |
 ## 📝 Dockerfile Layers
 
 1. **Base** — Debian bookworm-slim

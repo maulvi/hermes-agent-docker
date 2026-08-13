@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata locales sudo nano tmux git \
     ca-certificates gnupg \
     sqlite3 \
+    openssh-server \
     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
     libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 \
     libgbm1 libpango-1.0-0 libcairo2 libasound2 \
@@ -78,7 +79,24 @@ RUN mkdir -p ~/bin \
     && echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 
 # 10. Expose ports
-EXPOSE 5002
+
+# 12. Setup SSH server
+RUN sudo mkdir -p /run/sshd     && sudo ssh-keygen -A     && sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config     && sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config     && sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+
+# 13. Setup authorized_keys directory
+RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh
+
+# 14. Tmux config
+RUN echo 'set -g default-terminal "screen-256color"' > ~/.tmux.conf     && echo 'set -g history-limit 10000' >> ~/.tmux.conf     && echo 'set -g mouse on' >> ~/.tmux.conf     && echo 'bind r source-file ~/.tmux.conf' >> ~/.tmux.conf
+
+# 15. Expose SSH port
+EXPOSE 22 5002
+
+# 16. Entrypoint with SSH
+COPY entrypoint.sh /entrypoint.sh
+RUN sudo chmod +x /entrypoint.sh
+CMD ["/entrypoint.sh"]
+
 
 # 11. Default entrypoint
 CMD ["bash"]

@@ -8,12 +8,14 @@ services:
     network_mode: host
     volumes:
       - hermes-data:/opt/data
+      - ./ssh:/opt/data/ssh:ro
     env_file:
       - .env
     environment:
       - TZ=Asia/Jakarta
       - LANG=en_US.UTF-8
       - HERMES_DASHBOARD_PORT=${HERMES_DASHBOARD_PORT:-5002}
+      - SSH_PUBLIC_KEY=${SSH_PUBLIC_KEY:-}
 
 volumes:
   hermes-data:
