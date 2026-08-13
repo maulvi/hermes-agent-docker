@@ -1,10 +1,8 @@
-# syntax=docker/dockerfile:1
-
 FROM debian:trixie-slim
+
 LABEL maintainer="hermes-agent"
 LABEL description="Hermes Agent - Ready to use Docker image with official installer"
 
-# Non-interactive install
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Asia/Jakarta \
     LANG=en_US.UTF-8 \
@@ -12,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=en_US.UTF-8
 
 # ============================================================
-# LAYER 1: System deps (rarely changes, heavily cached)
+# LAYER 1: System dependencies and locale
 # ============================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -27,42 +25,63 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ripgrep \
     ffmpeg \
     sqlite3 \
+    locales \
+    tzdata \
+    && sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# LAYER 2: Hermes installer (only rebuilds when hermes updates)
-# Uses cache mounts for npm/pip to speed up subsequent builds
+# LAYER 2: Hermes installer
 # ============================================================
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/tmp/hermes-download \
-    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive --skip-setup
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh \
+    | bash -s -- --non-interactive --skip-setup
 
 # ============================================================
-# LAYER 3: User + SSH + tmux (rarely changes, cached)
+# LAYER 3: User, data directory, SSH, and tmux
 # ============================================================
 RUN useradd -m -s /bin/bash hermes \
     && echo 'hermes ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/hermes \
     && chmod 0440 /etc/sudoers.d/hermes \
-    && chown -R hermes:hermes /opt/hermes /opt/data /root/.hermes 2>/dev/null || true
-
-RUN mkdir -p /run/sshd \
+    && mkdir -p /opt/data /root/.hermes /home/hermes/.hermes /run/sshd \
+    && chown -R hermes:hermes /opt/data /home/hermes/.hermes \
     && ssh-keygen -A \
-    && sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config \
-    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config \
-    && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+    && sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config \
+    && sed -i 's/^#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
 
+# ============================================================
+# LAYER 4: Hermes user configuration
+# ============================================================
 USER hermes
+
+ENV HOME=/home/hermes \
+    PATH=/opt/hermes/bin:/home/hermes/.local/bin:${PATH}
+
 WORKDIR /opt/data
 
-RUN echo 'set -g default-terminal "screen-256color"' > ~/.tmux.conf \
-    && echo 'set -g history-limit 10000' >> ~/.tmux.conf \
-    && echo 'set -g mouse on' >> ~/.tmux.conf \
-    && mkdir -p ~/.ssh && chmod 700 ~/.ssh
+RUN printf '%s\n' \
+    'set -g default-terminal "screen-256color"' \
+    'set -g history-limit 10000' \
+    'set -g mouse on' \
+    > /home/hermes/.tmux.conf \
+    && mkdir -p /home/hermes/.ssh \
+    && chmod 700 /home/hermes/.ssh \
+    && mkdir -p /home/hermes/.hermes
 
-COPY entrypoint.sh /entrypoint.sh
-RUN sudo chmod +x /entrypoint.sh
+# ============================================================
+# LAYER 5: Entrypoint
+# ============================================================
+COPY --chown=hermes:hermes entrypoint.sh /entrypoint.sh
+
+USER root
+
+RUN chmod 0755 /entrypoint.sh
 
 EXPOSE 22 5002
 
-CMD ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
