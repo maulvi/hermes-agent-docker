@@ -1,0 +1,28 @@
+services:
+  hermes:
+    image: ${DOCKER_USERNAME:-yourusername}/hermes-agent:latest
+    container_name: hermes
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    volumes:
+      - hermes-data:/opt/data
+      - ./hermes-config.yaml:/opt/data/config.yaml:ro
+      - ./.env:/opt/data/.env:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Jakarta
+      - LANG=en_US.UTF-8
+    ports:
+      - "3000:3000"   # WhatsApp bridge
+      - "5001:5001"   # Dashboard
+    networks:
+      - hermes-net
+
+volumes:
+  hermes-data:
+
+networks:
+  hermes-net:
+    driver: bridge

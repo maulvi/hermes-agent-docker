@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.example
+*.md
+LICENSE
+node_modules
+__pycache__
+*.pyc
+.github
+.vscode
+.idea
