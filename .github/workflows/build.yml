@@ -54,7 +54,6 @@ jobs:
         # BuildKit inline cache for better layer reuse
         build-args: |
           BUILDKIT_INLINE_CACHE=1
-          NODE_VERSION=${{ env.NODE_VERSION }}
     - name: Update Docker Hub description
       if: github.event_name != 'pull_request'
       uses: peter-evans/dockerhub-description@v4
