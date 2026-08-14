@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     wget \
+    nano \
     ca-certificates \
     gnupg \
     sudo \
