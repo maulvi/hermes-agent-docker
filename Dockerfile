@@ -1,7 +1,7 @@
-FROM debian:trixie-slim
+FROM nousresearch/hermes-agent:latest
 
 LABEL maintainer="hermes-agent"
-LABEL description="Hermes Agent - Ready to use Docker image with official installer"
+LABEL description="Hermes Agent"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Asia/Jakarta \
@@ -28,20 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     locales \
     tzdata \
     alacritty \
-    && sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-    && locale-gen en_US.UTF-8 \
-    && update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
-
-# ============================================================
-# LAYER 2: Hermes installer
-# ============================================================
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.npm \
-    --mount=type=cache,target=/tmp/hermes-download \
-    curl -fsSL https://hermes-agent.nousresearch.com/install.sh \
-    | bash -s -- --non-interactive --skip-setup
-
+    
 # ============================================================
 # LAYER 3: User, data directory, SSH, and tmux
 # ============================================================
@@ -66,7 +54,7 @@ ENV HOME=/home/hermes \
 WORKDIR /opt/data
 
 RUN printf '%s\n' \
-    'set -g default-terminal "screen-256color"' \
+    'set -g default-terminal "xterm-256color"' \
     'set -g history-limit 10000' \
     'set -g mouse on' \
     > /home/hermes/.tmux.conf \
@@ -83,6 +71,6 @@ USER root
 
 RUN chmod 0755 /entrypoint.sh
 
-EXPOSE 22 5002
+EXPOSE 22
 
 ENTRYPOINT ["/entrypoint.sh"]
