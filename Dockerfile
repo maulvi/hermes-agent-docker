@@ -71,6 +71,6 @@ USER root
 
 RUN chmod 0755 /entrypoint.sh
 
-EXPOSE 22
+EXPOSE 2222
 
 ENTRYPOINT ["/entrypoint.sh"]
