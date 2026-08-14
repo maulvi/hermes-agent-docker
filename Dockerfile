@@ -84,9 +84,32 @@ RUN printf '%s\n' \
       > /opt/data/.tmux.conf \
  && chown hermes:hermes /opt/data/.tmux.conf
 
+
 # ============================================================
 # LAYER 5: Entrypoint
 # ============================================================
+RUN cat > /etc/profile.d/hermes.sh <<'EOF'
+export HOME=/opt/data
+export HERMES_HOME=/opt/data
+export PATH=/opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:$PATH
+EOF
+
+RUN chmod 0644 /etc/profile.d/hermes.sh \
+ && chown root:root /etc/profile.d/hermes.sh
+
+RUN cat > /opt/data/.bash_profile <<'EOF'
+if [ -f /etc/profile ]; then
+    . /etc/profile
+fi
+
+if [ -f "$HOME/.bashrc" ]; then
+    . "$HOME/.bashrc"
+fi
+EOF
+
+RUN chown hermes:hermes /opt/data/.bash_profile \
+ && chmod 0644 /opt/data/.bash_profile
+ 
 COPY --chown=hermes:hermes entrypoint.sh /entrypoint.sh
 
 RUN chmod 0755 /entrypoint.sh
