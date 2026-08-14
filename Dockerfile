@@ -45,15 +45,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # ============================================================
 # LAYER 3: User, data directory, SSH, and tmux
 # ============================================================
-RUN useradd -m -s /bin/bash hermes \
-    && echo 'hermes ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/hermes \
-    && chmod 0440 /etc/sudoers.d/hermes \
-    && mkdir -p /opt/data /root/.hermes /home/hermes/.hermes /run/sshd \
-    && chown -R hermes:hermes /opt/data /home/hermes/.hermes \
-    && ssh-keygen -A \
-    && sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config \
-    && sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config \
-    && sed -i 's/^#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+RUN echo 'hermes ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/hermes \
+ && chmod 0440 /etc/sudoers.d/hermes \
+ && mkdir -p /opt/data /root/.hermes /home/hermes/.hermes /run/sshd \
+ && chown -R hermes:hermes /opt/data /home/hermes/.hermes \
+ && ssh-keygen -A \
+ && sed -i 's/^#\?PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config \
+ && sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config \
+ && sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 
 # ============================================================
 # LAYER 4: Hermes user configuration
