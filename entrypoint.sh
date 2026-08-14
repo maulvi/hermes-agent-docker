@@ -52,19 +52,8 @@ if ! sudo -u hermes -H tmux has-session -t hermes 2>/dev/null; then
         -c /opt/data
 fi
 
-# Jalankan Hermes sebagai user hermes
-sudo -u hermes -H bash -lc \
-    'exec hermes gateway run' &
-
-GATEWAY_PID=$!
-
 # Validasi konfigurasi SSH
 /usr/sbin/sshd -t -o "Port=${SSH_PORT}"
-
-cleanup() {
-    kill "$GATEWAY_PID" 2>/dev/null || true
-    wait "$GATEWAY_PID" 2>/dev/null || true
-}
 
 trap cleanup SIGTERM SIGINT EXIT
 
