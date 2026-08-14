@@ -5,7 +5,8 @@ services:
     volumes:
       - /home/b/hermes:/opt/data
     ports:
-      - 8642:8642
+      - 100.100.12.34:8642:8642
+      - 2222:22
     environment:
       - API_SERVER_ENABLED=true
       - API_SERVER_HOST=0.0.0.0
@@ -13,12 +14,12 @@ services:
       - API_SERVER_CORS_ORIGINS=*
       - TZ=Asia/Jakarta
       - LANG=en_US.UTF-8
+      - SSH_PUBLIC_KEY=${SSH_PUBLIC_KEY:-}
       - TMUX_SESSION=termux
-    image: nousresearch/hermes-agent
-    command: gateway run
+    image: vltruist/hermes-agent:latest
+    command: hermes gateway run
     networks:
       - hermes-net
-      
 networks:
   hermes-net:
     driver: bridge
