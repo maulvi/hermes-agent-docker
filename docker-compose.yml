@@ -13,6 +13,7 @@ services:
       - API_SERVER_CORS_ORIGINS=*
       - TZ=Asia/Jakarta
       - LANG=en_US.UTF-8
+      - TMUX_SESSION=termux
     image: nousresearch/hermes-agent
     command: gateway run
     networks:
